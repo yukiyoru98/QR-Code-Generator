@@ -31,7 +31,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: worker
-          args: publish
+          args: deploy --keep-vars
 
       - name: Extract Worker URL via Cloudflare API
         id: extract_url
@@ -71,21 +71,8 @@ jobs:
         working-directory: ./dashboard
         run: npm ci
 
-      - name: Validate dashboard short URL
-        env:
-          BASE_SHORT_URL: ${{ secrets.CLOUDFLARE_WORKER_URL }}
-        run: |
-          set -e
-          if [ -z "$BASE_SHORT_URL" ] || [[ "$BASE_SHORT_URL" == *localhost* ]]; then
-            echo "CLOUDFLARE_WORKER_URL must be set to the public redirect Worker URL."
-            exit 1
-          fi
-          echo "Using production short URL base: $BASE_SHORT_URL"
-
       - name: Build dashboard for Cloudflare Workers
         working-directory: ./dashboard
-        env:
-          BASE_SHORT_URL: ${{ secrets.CLOUDFLARE_WORKER_URL }}
         run: npm run build:cloudflare
 
       - name: Publish dashboard Worker
@@ -93,6 +80,5 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          BASE_SHORT_URL: ${{ secrets.CLOUDFLARE_WORKER_URL }}
-        run: npx wrangler deploy --var "BASE_SHORT_URL:$BASE_SHORT_URL"
+        run: npx wrangler deploy --keep-vars
 
