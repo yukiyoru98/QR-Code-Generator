@@ -9,6 +9,7 @@ out/
 dist/
 coverage/
 .wrangler/
+.wrangler-dry-run/
 
 # Local editor and OS files
 .vscode/mcp.json

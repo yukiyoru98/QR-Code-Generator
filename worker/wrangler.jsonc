@@ -13,13 +13,7 @@
 	"upload_source_maps": true,
 	"compatibility_flags": [
 		"nodejs_compat"
-	],
-	"vars": {
-		"UPSTASH_REDIS_REST_URL": "https://mock-redis.upstash.io",
-		"UPSTASH_REDIS_REST_TOKEN": "mock_upstash_token_12345",
-		"TINYBIRD_INGEST_URL": "https://api.tinybird.co/v0/events?name=scan_events",
-		"TINYBIRD_API_KEY": "mock_tinybird_api_key_12345"
-	}
+	]
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
@@ -37,7 +31,6 @@
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
 	/**
 	 * Static Assets
 	 * https://developers.cloudflare.com/workers/static-assets/binding/
