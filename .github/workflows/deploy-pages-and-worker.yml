@@ -1,4 +1,4 @@
-name: Deploy Worker and Pages
+name: Deploy Worker and Dashboard
 
 on:
   push:
@@ -54,8 +54,8 @@ jobs:
           echo "Found worker URL: $WORKER_URL"
           echo "worker_url=$WORKER_URL" >> $GITHUB_OUTPUT
 
-  deploy-pages:
-    name: Deploy Pages (dashboard)
+  deploy-dashboard:
+    name: Publish Dashboard
     needs: deploy-worker
     runs-on: ubuntu-latest
     steps:
@@ -67,39 +67,21 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install & Build (dashboard)
+      - name: Install dashboard dependencies
+        working-directory: ./dashboard
+        run: npm ci
+
+      - name: Build dashboard for Cloudflare Workers
         working-directory: ./dashboard
         env:
-          NEXT_PUBLIC_API_URL: ${{ needs.deploy-worker.outputs.worker_url }}
-        run: |
-          npm ci
-          npm run build
+          BASE_SHORT_URL: ${{ secrets.CLOUDFLARE_WORKER_URL }}
+        run: npm run build:cloudflare
 
-      - name: Ensure Cloudflare Pages project exists
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_PAGES_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}
-        run: |
-          set -e
-          PROJECT_URL="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/$CLOUDFLARE_PAGES_PROJECT_NAME"
-          STATUS=$(curl -sS -o /tmp/pages-project.json -w "%{http_code}" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            "$PROJECT_URL")
-          if [ "$STATUS" = "404" ]; then
-            echo "Pages project '$CLOUDFLARE_PAGES_PROJECT_NAME' does not exist; creating it."
-            npx wrangler pages project create "$CLOUDFLARE_PAGES_PROJECT_NAME" --production-branch main
-          elif [ "$STATUS" != "200" ]; then
-            echo "Unable to check Pages project '$CLOUDFLARE_PAGES_PROJECT_NAME' (HTTP $STATUS)."
-            cat /tmp/pages-project.json
-            exit 1
-          fi
-
-      - name: Publish to Cloudflare Pages (Wrangler)
+      - name: Publish dashboard Worker
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: worker
-          args: pages deploy ../dashboard/out --project-name=${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }} --branch=main
+          workingDirectory: dashboard
+          args: deploy --var BASE_SHORT_URL:${{ secrets.CLOUDFLARE_WORKER_URL }}
+
