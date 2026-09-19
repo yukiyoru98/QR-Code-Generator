@@ -71,6 +71,17 @@ jobs:
         working-directory: ./dashboard
         run: npm ci
 
+      - name: Validate dashboard short URL
+        env:
+          BASE_SHORT_URL: ${{ secrets.CLOUDFLARE_WORKER_URL }}
+        run: |
+          set -e
+          if [ -z "$BASE_SHORT_URL" ] || [[ "$BASE_SHORT_URL" == *localhost* ]]; then
+            echo "CLOUDFLARE_WORKER_URL must be set to the public redirect Worker URL."
+            exit 1
+          fi
+          echo "Using production short URL base: $BASE_SHORT_URL"
+
       - name: Build dashboard for Cloudflare Workers
         working-directory: ./dashboard
         env:
