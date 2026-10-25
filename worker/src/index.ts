@@ -46,6 +46,8 @@ async function sendTinybirdLog(request: Request, token: string, env: Env): Promi
 
 	const forwardedFor = request.headers.get("x-forwarded-for") ?? "";
 	const ipHash = forwardedFor ? Buffer.from(forwardedFor).toString("base64") : "";
+	const userAgent = request.headers.get("user-agent") ?? "";
+	const referer = request.headers.get("referer") ?? "";
 
 	await fetch(env.TINYBIRD_INGEST_URL, {
 		method: "POST",
@@ -56,10 +58,36 @@ async function sendTinybirdLog(request: Request, token: string, env: Env): Promi
 		body: JSON.stringify({
 			token,
 			scanned_at: new Date().toISOString(),
-			user_agent: request.headers.get("user-agent") ?? "",
-			referer: request.headers.get("referer") ?? "",
+			user_agent: userAgent,
+			referer,
 			ip_hash: ipHash || null,
 			country: request.cf?.country ?? "",
+		}),
+	});
+}
+
+async function logToSupabase(request: Request, token: string, env: Env): Promise<void> {
+	if (!env.SUPABASE_URL || !env.SUPABASE_SECRET_KEY) {
+		return;
+	}
+
+	const forwardedFor = request.headers.get("x-forwarded-for") ?? "";
+	const ipHash = forwardedFor ? Buffer.from(forwardedFor).toString("base64") : "";
+	const userAgent = request.headers.get("user-agent") ?? "";
+	const referer = request.headers.get("referer") ?? "";
+
+	await fetch(`${env.SUPABASE_URL}/rest/v1/scan_events`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			apikey: env.SUPABASE_SECRET_KEY,
+			Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+		},
+		body: JSON.stringify({
+			token,
+			user_agent: userAgent,
+			referer,
+			ip_hash: ipHash || null,
 		}),
 	});
 }
@@ -83,7 +111,10 @@ export default {
 			return jsonResponse(410, "Token has been deleted or expired");
 		}
 
-		ctx.waitUntil(sendTinybirdLog(request, token, env));
+		ctx.waitUntil(Promise.all([
+			sendTinybirdLog(request, token, env),
+			logToSupabase(request, token, env),
+		]));
 
 		return Response.redirect(payload.url, 302);
 	},
