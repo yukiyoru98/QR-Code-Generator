@@ -5,7 +5,19 @@ compatibility_flags = ["nodejs_compat"]
 
 [observability]
 enabled = true
+head_sampling_rate = 1
+redact_query_string = false
 
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
+
+[observability.traces]
+enabled = true
+head_sampling_rate = 1
+persist = true
 # Set secrets via Wrangler:
 # wrangler secret put UPSTASH_REDIS_REST_TOKEN
 # wrangler secret put TINYBIRD_API_KEY
