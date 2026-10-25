@@ -76,8 +76,10 @@ TINYBIRD_URL=https://your-region.tinybird.co
 Run the CLI from `dashboard`:
 
 ```bash
+git switch -c tinybird-setup
 tinybird info
 tinybird build
+tinybird deploy
 ```
 
 `tinybird build` reads the TypeScript definitions and creates or updates `scan_events` and `scan_analytics` in the Tinybird branch. Do not create `scan_events` manually in the Tinybird UI.
