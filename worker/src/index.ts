@@ -44,6 +44,9 @@ async function sendTinybirdLog(request: Request, token: string, env: Env): Promi
 		return;
 	}
 
+	const forwardedFor = request.headers.get("x-forwarded-for") ?? "";
+	const ipHash = forwardedFor ? Buffer.from(forwardedFor).toString("base64") : "";
+
 	await fetch(env.TINYBIRD_INGEST_URL, {
 		method: "POST",
 		headers: {
@@ -55,6 +58,7 @@ async function sendTinybirdLog(request: Request, token: string, env: Env): Promi
 			scanned_at: new Date().toISOString(),
 			user_agent: request.headers.get("user-agent") ?? "",
 			referer: request.headers.get("referer") ?? "",
+			ip_hash: ipHash || null,
 			country: request.cf?.country ?? "",
 		}),
 	});
